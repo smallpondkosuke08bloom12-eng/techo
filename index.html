@@ -1,191 +1,173 @@
 <!DOCTYPE html><html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>手帳PWA</title>
+<title>手帳</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
 <style>
-/* ===== ベース（手帳風・大きめ） ===== */
-body{
-  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
-  margin:0;
-  padding:12px;
-  background:#f5f2ed;
-  font-size:18px;
-}h1{ font-size:24px; margin:8px 0 12px; }
-
-/* ===== ボタン ===== */ #topbar, #routines{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-
-#topbar button, #routines button{ padding:12px 18px; font-size:16px; border-radius:12px; border:1px solid #bbb; background:#fffdf8; }
-
-#topbar button{font-weight:600}
-
-/* ===== レイアウト ===== */ .year{ display:grid; grid-template-columns:1fr; gap:16px; }
-
-.monthView{ display:grid; grid-template-columns:1fr; gap:16px; }
-
-.month{ border:1px solid #c9c3b8; padding:12px; border-radius:16px; background:#fffdf8; }
-
-.month h2{ font-size:20px; margin:6px 0 10px; text-align:center; }
-
-/* ===== 曜日・日付 ===== */ .week{ display:grid; grid-template-columns:repeat(7,1fr); font-size:14px; text-align:center; margin-bottom:6px; }
-
-.days{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-
-.day{ border:1px solid #ddd; min-height:56px; font-size:18px; display:flex; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; background:#fff; }
-
-/* ===== 状態色（やわらか） ===== */ .work{background:#cfe9f6;color:#1e5a7a} .lesson{background:#dff4d8;color:#2f6b3c} .hobby{background:#fff2b3;color:#7a6500} .meeting{background:#f6c7d0;color:#7a1e2e}
-
-.today{ outline:3px dashed #444; }
-
-/* ===== TODO ===== */ #todoView{font-size:18px}
-
-.todoItem{ border-bottom:1px dashed #aaa; padding:10px 6px; }
-
-.hidden{display:none} </style>
-
+body{font-family:"Hiragino Maru Gothic ProN",sans-serif;margin:0;padding:12px;background:#fdfcf8}
+h1{font-size:22px;margin:6px 0}
+#topbar button,#routines button,#addTodoBtn{margin:4px;padding:10px 14px;font-size:16px;border-radius:10px;border:1px solid #ccc;background:#fff}
+#routines button.active{border-width:2px}
+.year{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.monthView,.weekView{display:grid;grid-template-columns:1fr;gap:12px}
+.month,.week{border:1px solid #ddd;padding:8px;border-radius:12px;background:#fff}
+.month h2,.week h2{font-size:16px;margin:4px 0;text-align:center}
+.weekHeader{display:grid;grid-template-columns:repeat(7,1fr);font-size:13px;text-align:center;font-weight:bold}
+.weekDays{display:grid;grid-template-columns:repeat(7,1fr)}
+.day,.weekDay{border:1px solid #eee;min-height:50px;font-size:14px;text-align:center;cursor:pointer;border-radius:6px;padding:4px}
+.work{background:#d8ecff;color:#1b4f8a}
+.lesson{background:#e3f6e8;color:#1f6b3a}
+.meeting{background:#ffe1e6;color:#8a1b32}
+.hobby{background:#fff4cc;color:#8a6b1b}
+.today{outline:3px solid #555}
+.todoText{font-size:12px;margin-top:4px}
+#todoView{font-size:15px}
+.todoItem{border-bottom:1px dashed #ccc;padding:8px 0}
+.hidden{display:none}
+</style>
 </head>
 <body>
 <h1>📘 手帳</h1><div id="topbar">
-  <button onclick="setView('year')">年</button>
-  <button onclick="setView('month')">月</button>
-  <button onclick="setView('todo')">TODO</button>
+<button onclick="setView('year')">年</button>
+<button onclick="setView('month')">月</button>
+<button onclick="setView('week')">週</button>
+<button onclick="setView('todo')">TODO</button>
 </div><div id="routines">
-  <button class="workBtn" onclick="setMode('work')">仕事</button>
-  <button class="lessonBtn" onclick="setMode('lesson')">習い事</button>
-  <button class="meetingBtn" onclick="setMode('meeting')">会合</button>
-  <button class="hobbyBtn" onclick="setMode('hobby')">趣味</button>
+<button data-mode="work" onclick="setMode('work')">仕事</button>
+<button data-mode="lesson" onclick="setMode('lesson')">習い事</button>
+<button data-mode="meeting" onclick="setMode('meeting')">会合</button>
+<button data-mode="hobby" onclick="setMode('hobby')">趣味</button>
 </div><div id="calendar" class="year"></div>
 <div id="todoView" class="hidden">
-  <button onclick="addTodo()">＋予定を追加</button>
+<button id="addTodoBtn" onclick="addTodo()">＋予定を作成</button>
+<div id="todoList"></div>
 </div><script>
-// ===== 状態 =====
-const calendar = document.getElementById('calendar');
-const todoView = document.getElementById('todoView');
+const calendar=document.getElementById('calendar');
+const todoView=document.getElementById('todoView');
+const todoList=document.getElementById('todoList');
+let currentView='year';
+let viewDate=new Date();
+let currentMode='work';
+const todayStr=new Date().toISOString().slice(0,10);
 
-let currentView = 'year';
-let viewDate = new Date();   // 表示中の年月（唯一の基準）
-let currentMode = 'work'; // work / lesson / meeting / hobby
-const today = new Date().toISOString().slice(0,10);
+function setMode(m){
+ currentMode=m;
+ document.querySelectorAll('#routines button').forEach(b=>{
+  b.classList.toggle('active',b.dataset.mode===m);
+  b.style.borderColor=b.dataset.mode===m?getColor(m):'#ccc';
+ });
+}
 
-// ===== 基本操作 =====
-function setMode(m){ currentMode = m; }
-function setView(v){ currentView = v; render(); }
+function getColor(m){
+ return {work:'#1b4f8a',lesson:'#1f6b3a',meeting:'#8a1b32',hobby:'#8a6b1b'}[m];
+}
 
-function prevMonth(){ viewDate.setMonth(viewDate.getMonth() - 1); render(); }
-function nextMonth(){ viewDate.setMonth(viewDate.getMonth() + 1); render(); }
+function setView(v){currentView=v;render()}
 
-// ===== 保存 =====
-function save(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
-function load(key){ return JSON.parse(localStorage.getItem(key) || '{}'); }
+function save(key,val){localStorage.setItem(key,JSON.stringify(val))}
+function load(key){return JSON.parse(localStorage.getItem(key)||'{}')}
 
-const marks = load('marks');
-const todos = load('todos');
+const marks=load('marks');
+const todos=load('todos');
 
-// ===== 描画 =====
 function addTodo(){
-  const d = prompt('日付（YYYY-MM-DD）');
-  if(!d) return;
-  const t = prompt('内容');
-  if(!t) return;
-  todos[d] = t;
-  save('todos', todos);
-  render();
+ const d=prompt('日付（YYYY-MM-DD）');
+ if(!d)return;
+ const t=prompt('予定内容');
+ if(!t)return;
+ todos[d]=t;save('todos',todos);render();
+}
+
+function startOfWeek(date){
+ const d=new Date(date);
+ const day=d.getDay();
+ d.setDate(d.getDate()-day);
+ return d;
 }
 
 function render(){
-  calendar.innerHTML = '';
-  todoView.innerHTML = '';
+calendar.innerHTML='';
+todoList.innerHTML='';
+calendar.className=currentView==='year'?'year':currentView==='week'?'weekView':'monthView';
+calendar.classList.toggle('hidden',currentView==='todo');
+todoView.classList.toggle('hidden',currentView!=='todo');
 
-  calendar.className = currentView === 'year' ? 'year' : 'monthView';
-  calendar.classList.toggle('hidden', currentView === 'todo');
-  todoView.classList.toggle('hidden', currentView !== 'todo');
-
-  const y = viewDate.getFullYear();
-  const m0 = viewDate.getMonth(); // 0-11
-
-  // TODOビュー
-  if(currentView === 'todo'){
-    Object.keys(todos).sort().forEach(d => {
-      const div = document.createElement('div');
-      div.className = 'todoItem';
-      div.textContent = `${d}：${todos[d]}`;
-      todoView.appendChild(div);
-    });
-    return;
-  }
-
-  // 月ヘッダー
-  if(currentView === 'month'){
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
-    header.style.margin = '4px 0';
-    header.innerHTML = `
-      <button onclick="prevMonth()">◀</button>
-      <strong>${y}年 ${m0 + 1}月</strong>
-      <button onclick="nextMonth()">▶</button>
-    `;
-    calendar.appendChild(header);
-  }
-
-  const months = currentView === 'year'
-    ? [...Array(12).keys()]
-    : [m0];
-
-  months.forEach(m => {
-    const month = document.createElement('div');
-    month.className = 'month';
-    month.innerHTML = `<h2>${m + 1}月</h2>`;
-
-    const week = document.createElement('div');
-    week.className = 'week';
-    ['日','月','火','水','木','金','土'].forEach(w => {
-      week.innerHTML += `<div>${w}</div>`;
-    });
-    month.appendChild(week);
-
-    const days = document.createElement('div');
-    days.className = 'days';
-
-    const first = new Date(y, m, 1).getDay();
-    for(let i=0;i<first;i++) days.innerHTML += '<div></div>';
-
-    const last = new Date(y, m+1, 0).getDate();
-    for(let d=1; d<=last; d++){
-      const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const div = document.createElement('div');
-      div.className = 'day';
-      if(marks[date]) div.classList.add(marks[date]);
-      if(date === today) div.classList.add('today');
-      div.textContent = d;
-      div.onclick = () => {
-        // 1タップ：マーキング切替（確認なし）
-        if(marks[date] === currentMode){
-          delete marks[date];
-        }else{
-          marks[date] = currentMode;
-        }
-        save('marks', marks);
-        render();
-      };
-
-      div.ondblclick = () => {
-        // ダブルタップ：マーキング解除
-        delete marks[date];
-        save('marks', marks);
-        render();
-      };
-      days.appendChild(div);
-    }
-
-    month.appendChild(days);
-    calendar.appendChild(month);
-  });
+if(currentView==='todo'){
+ Object.keys(todos).sort().forEach(d=>{
+  const div=document.createElement('div');
+  div.className='todoItem';
+  div.textContent=`${d}：${todos[d]}`;
+  todoList.appendChild(div);
+ });
+ return;
 }
 
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+const y=viewDate.getFullYear();
+const m=viewDate.getMonth();
+
+if(currentView==='week'){
+ const start=startOfWeek(viewDate);
+ const week=document.createElement('div');week.className='week';
+ week.innerHTML=`<h2>${start.getMonth()+1}月 第${Math.ceil(start.getDate()/7)}週</h2>`;
+ const header=document.createElement('div');header.className='weekHeader';
+ ['日','月','火','水','木','金','土'].forEach(w=>header.innerHTML+=`<div>${w}</div>`);
+ week.appendChild(header);
+ const days=document.createElement('div');days.className='weekDays';
+ for(let i=0;i<7;i++){
+  const d=new Date(start);d.setDate(start.getDate()+i);
+  const dateStr=d.toISOString().slice(0,10);
+  const cell=document.createElement('div');cell.className='weekDay';
+  if(marks[dateStr])cell.classList.add(marks[dateStr]);
+  if(dateStr===todayStr)cell.classList.add('today');
+  cell.innerHTML=`<strong>${d.getDate()}</strong>`;
+  if(todos[dateStr]){
+   const t=document.createElement('div');t.className='todoText';t.textContent=todos[dateStr];
+   cell.appendChild(t);
+  }
+  cell.onclick=()=>{
+   if(marks[dateStr]===currentMode)delete marks[dateStr];
+   else marks[dateStr]=currentMode;
+   save('marks',marks);render();
+  };
+  days.appendChild(cell);
+ }
+ week.appendChild(days);
+ calendar.appendChild(week);
+ return;
+}
+
+const months=currentView==='year'?[...Array(12).keys()]:[m];
+months.forEach(mm=>{
+ const month=document.createElement('div');month.className='month';
+ month.innerHTML=`<h2>${mm+1}月</h2>`;
+ const week=document.createElement('div');week.className='weekHeader';
+ ['日','月','火','水','木','金','土'].forEach(w=>week.innerHTML+=`<div>${w}</div>`);
+ month.appendChild(week);
+ const days=document.createElement('div');days.className='weekDays';
+ const first=new Date(y,mm,1).getDay();
+ for(let i=0;i<first;i++)days.innerHTML+='<div></div>';
+ const last=new Date(y,mm+1,0).getDate();
+ for(let d=1;d<=last;d++){
+  const dateStr=`${y}-${String(mm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const div=document.createElement('div');div.className='day';
+  if(marks[dateStr])div.classList.add(marks[dateStr]);
+  if(dateStr===todayStr)div.classList.add('today');
+  div.textContent=d;
+  div.onclick=()=>{
+   if(marks[dateStr]===currentMode)delete marks[dateStr];
+   else marks[dateStr]=currentMode;
+   save('marks',marks);render();
+  };
+  days.appendChild(div);
+ }
+ month.appendChild(days);
+ calendar.appendChild(month);
+});
+}
+
+setMode('work');
 render();
 </script></body>
 </html>
+    
