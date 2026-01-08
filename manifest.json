@@ -1,0 +1,8 @@
+{
+  "name": "手帳",
+  "short_name": "手帳",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#ffffff"
+}
