@@ -1,82 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>手帳</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="manifest" href="manifest.json">
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 12px;
-      background: #fafafa;
-    }
-    h1 { font-size: 20px; }
-    button {
-      padding: 8px 12px;
-      margin: 4px;
-      font-size: 14px;
-    }
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-    }
-    .day {
-      border: 1px solid #ccc;
-      min-height: 60px;
-      font-size: 12px;
-      padding: 4px;
-    }
-    .routine {
-      background: #e0e0ff;
-      margin-top: 4px;
-      padding: 2px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>手帳</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<style>
+body{font-family:sans-serif;margin:0;padding:8px;background:#fafafa}
+h1{font-size:18px;margin:4px 0}
+#routines button{margin:2px;padding:6px 10px}
+.year{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.month{border:1px solid #ccc;padding:4px}
+.month h2{font-size:14px;margin:2px 0}
+.week{display:grid;grid-template-columns:repeat(7,1fr);font-size:10px;text-align:center}
+.days{display:grid;grid-template-columns:repeat(7,1fr)}
+.day{border:1px solid #ddd;min-height:24px;font-size:10px;text-align:center;cursor:pointer}
+.work{background:#ffdede}
+.life{background:#deebff}
+hobby{background:#deffe4}
+.none{background:#eee}
+.today{outline:2px solid #000}
+textarea{width:100%;font-size:12px}
+</style>
 </head>
 <body>
-
 <h1>📘 手帳</h1>
 
-<button onclick="addRoutine()">＋ ルーティン追加</button>
+<div id="routines">
+<button onclick="setMode('work')">仕事</button>
+<button onclick="setMode('life')">私用</button>
+<button onclick="setMode('hobby')">趣味</button>
+<button onclick="setMode('none')">何もしない</button>
+</div>
 
-<div class="calendar" id="calendar"></div>
+<div class="year" id="calendar"></div>
 
 <script>
-const calendar = document.getElementById("calendar");
-const days = 30;
+const calendar=document.getElementById('calendar');
+const modes=['work','life','hobby','none'];
+let currentMode='work';
+const today=new Date().toISOString().slice(0,10);
 
-function load() {
-  calendar.innerHTML = "";
-  for (let i = 1; i <= days; i++) {
-    const d = document.createElement("div");
-    d.className = "day";
-    d.innerHTML = i;
-    const saved = localStorage.getItem("day" + i);
-    if (saved) d.innerHTML += saved;
-    calendar.appendChild(d);
-  }
+function setMode(m){currentMode=m}
+
+function save(key,val){localStorage.setItem(key,JSON.stringify(val))}
+function load(key){return JSON.parse(localStorage.getItem(key)||'{}')}
+
+const marks=load('marks');
+const todos=load('todos');
+
+function render(){
+calendar.innerHTML='';
+const y=new Date().getFullYear();
+for(let m=0;m<12;m++){
+const month=document.createElement('div');month.className='month';
+month.innerHTML=`<h2>${m+1}月</h2>`;
+const week=document.createElement('div');week.className='week';
+['日','月','火','水','木','金','土'].forEach(w=>week.innerHTML+=`<div>${w}</div>`);
+month.appendChild(week);
+const days=document.createElement('div');days.className='days';
+const first=new Date(y,m,1).getDay();
+for(let i=0;i<first;i++)days.innerHTML+='<div></div>';
+const last=new Date(y,m+1,0).getDate();
+for(let d=1;d<=last;d++){
+const date=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const div=document.createElement('div');
+div.className='day';
+if(marks[date])div.classList.add(marks[date]);
+if(date===today)div.classList.add('today');
+div.textContent=d;
+div.onclick=()=>{
+marks[date]=currentMode;save('marks',marks);
+const t=prompt('TODO（空でキャンセル）',todos[date]||'');
+if(t!==null){todos[date]=t;save('todos',todos)}
+render();
+};
+days.appendChild(div);
+}
+month.appendChild(days);
+calendar.appendChild(month);
+}
 }
 
-function addRoutine() {
-  const text = prompt("ルーティン内容（例：散歩・読書）");
-  if (!text) return;
-  const day = prompt("何日？（数字）");
-  if (!day) return;
-  const html = `<div class="routine">${text}</div>`;
-  localStorage.setItem("day" + day, html);
-  load();
-}
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-
-load();
+if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js')}
+render();
 </script>
-
 </body>
 </html>
