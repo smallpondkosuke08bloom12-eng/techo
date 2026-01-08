@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>手帳</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 12px;
+      background: #fafafa;
+    }
+    h1 { font-size: 20px; }
+    button {
+      padding: 8px 12px;
+      margin: 4px;
+      font-size: 14px;
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .day {
+      border: 1px solid #ccc;
+      min-height: 60px;
+      font-size: 12px;
+      padding: 4px;
+    }
+    .routine {
+      background: #e0e0ff;
+      margin-top: 4px;
+      padding: 2px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📘 手帳</h1>
+
+<button onclick="addRoutine()">＋ ルーティン追加</button>
+
+<div class="calendar" id="calendar"></div>
+
+<script>
+const calendar = document.getElementById("calendar");
+const days = 30;
+
+function load() {
+  calendar.innerHTML = "";
+  for (let i = 1; i <= days; i++) {
+    const d = document.createElement("div");
+    d.className = "day";
+    d.innerHTML = i;
+    const saved = localStorage.getItem("day" + i);
+    if (saved) d.innerHTML += saved;
+    calendar.appendChild(d);
+  }
+}
+
+function addRoutine() {
+  const text = prompt("ルーティン内容（例：散歩・読書）");
+  if (!text) return;
+  const day = prompt("何日？（数字）");
+  if (!day) return;
+  const html = `<div class="routine">${text}</div>`;
+  localStorage.setItem("day" + day, html);
+  load();
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+
+load();
+</script>
+
+</body>
+</html>
