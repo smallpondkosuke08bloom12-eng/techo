@@ -48,14 +48,14 @@ hobby{background:#deffe4}
 
 <script>
 function prevMonth(){
-  currentMonth = (currentMonth + 11) % 12;
+  viewDate.setMonth(viewDate.getMonth() - 1);
   render();
 }
 
 function nextMonth(){
-  currentMonth = (currentMonth + 1) % 12;
-  render();
-}const calendar=document.getElementById('calendar');
+  viewDate.setMonth(viewDate.getMonth() + 1);
+  render();}
+const calendar=document.getElementById('calendar');
 const todoView=document.getElementById('todoView');
 let currentView='year';
 let viewDate = new Date(); // ← 表示中の年月
@@ -74,6 +74,9 @@ const todos=load('todos');
 function render(){
 calendar.innerHTML='';
 todoView.innerHTML='';
+
+const y = viewDate.getFullYear();
+const m0 = viewDate.getMonth(); // 0〜11
 calendar.className=currentView==='year'?'year':'monthView';
 calendar.classList.toggle('hidden',currentView==='todo');
 todoView.classList.toggle('hidden',currentView!=='todo');
@@ -89,21 +92,23 @@ todoView.appendChild(div);
 return;
 }
 
-
 if(currentView === 'month'){
-  const header = document.createElement('div');
-  header.style.display = 'flex';
-  header.style.justifyContent = 'space-between';
-  header.style.alignItems = 'center';
-  header.style.margin = '4px 0';
+const header = document.createElement('div');
+header.style.display = 'flex';
+header.style.justifyContent = 'space-between';
+header.style.alignItems = 'center';
+header.style.margin = '4px 0';
 
   header.innerHTML = `
     <button onclick="prevMonth()">◀</button>
-    <strong>${y}年 ${currentMonth + 1}月</strong>
+    <strong>${y}年 ${m0 + 1}月</strong>
     <button onclick="nextMonth()">▶</button>
   `;
   calendar.appendChild(header);
-}const months=currentView==='year'?[...Array(12).keys()]:[currentMonth];
+  }
+const months = currentView === 'year'
+  ? [...Array(12).keys()]
+  : [m0];
 months.forEach(m=>{
 const month=document.createElement('div');month.className='month';
 month.innerHTML=`<h2>${m+1}月</h2>`;
