@@ -47,7 +47,15 @@ hobby{background:#deffe4}
 <div id="todoView" class="hidden"></div>
 
 <script>
-const calendar=document.getElementById('calendar');
+function prevMonth(){
+  currentMonth = (currentMonth + 11) % 12;
+  render();
+}
+
+function nextMonth(){
+  currentMonth = (currentMonth + 1) % 12;
+  render();
+}const calendar=document.getElementById('calendar');
 const todoView=document.getElementById('todoView');
 let currentView='year';
 let currentMonth=new Date().getMonth();
