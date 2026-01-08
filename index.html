@@ -58,7 +58,7 @@ function nextMonth(){
 }const calendar=document.getElementById('calendar');
 const todoView=document.getElementById('todoView');
 let currentView='year';
-let currentMonth=new Date().getMonth();
+let viewDate = new Date(); // ← 表示中の年月
 let currentMode='work';
 const today=new Date().toISOString().slice(0,10);
 
@@ -77,7 +77,7 @@ todoView.innerHTML='';
 calendar.className=currentView==='year'?'year':'monthView';
 calendar.classList.toggle('hidden',currentView==='todo');
 todoView.classList.toggle('hidden',currentView!=='todo');
-const y=new Date().getFullYear();
+
 
 if(currentView==='todo'){
 Object.keys(todos).sort().forEach(d=>{
