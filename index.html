@@ -34,7 +34,7 @@ body{
 
 .day{ border:1px solid #ddd; min-height:56px; font-size:18px; display:flex; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; background:#fff; }
 
-/* ===== 状態色（やわらか） ===== */ .work{background:#f4c7c7} .life{background:#c7d9f4} .hobby{background:#c7f0d4} .none{background:#eee}
+/* ===== 状態色（やわらか） ===== */ .work{background:#cfe9f6;color:#1e5a7a} .lesson{background:#dff4d8;color:#2f6b3c} .hobby{background:#fff2b3;color:#7a6500} .meeting{background:#f6c7d0;color:#7a1e2e}
 
 .today{ outline:3px dashed #444; }
 
@@ -51,19 +51,21 @@ body{
   <button onclick="setView('month')">月</button>
   <button onclick="setView('todo')">TODO</button>
 </div><div id="routines">
-  <button onclick="setMode('work')">仕事</button>
-  <button onclick="setMode('life')">私用</button>
-  <button onclick="setMode('hobby')">趣味</button>
-  <button onclick="setMode('none')">何もしない</button>
+  <button class="workBtn" onclick="setMode('work')">仕事</button>
+  <button class="lessonBtn" onclick="setMode('lesson')">習い事</button>
+  <button class="meetingBtn" onclick="setMode('meeting')">会合</button>
+  <button class="hobbyBtn" onclick="setMode('hobby')">趣味</button>
 </div><div id="calendar" class="year"></div>
-<div id="todoView" class="hidden"></div><script>
+<div id="todoView" class="hidden">
+  <button onclick="addTodo()">＋予定を追加</button>
+</div><script>
 // ===== 状態 =====
 const calendar = document.getElementById('calendar');
 const todoView = document.getElementById('todoView');
 
 let currentView = 'year';
 let viewDate = new Date();   // 表示中の年月（唯一の基準）
-let currentMode = 'work';
+let currentMode = 'work'; // work / lesson / meeting / hobby
 const today = new Date().toISOString().slice(0,10);
 
 // ===== 基本操作 =====
@@ -81,6 +83,16 @@ const marks = load('marks');
 const todos = load('todos');
 
 // ===== 描画 =====
+function addTodo(){
+  const d = prompt('日付（YYYY-MM-DD）');
+  if(!d) return;
+  const t = prompt('内容');
+  if(!t) return;
+  todos[d] = t;
+  save('todos', todos);
+  render();
+}
+
 function render(){
   calendar.innerHTML = '';
   todoView.innerHTML = '';
