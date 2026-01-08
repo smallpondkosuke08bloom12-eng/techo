@@ -8,8 +8,10 @@
 <style>
 body{font-family:sans-serif;margin:0;padding:8px;background:#fafafa}
 h1{font-size:18px;margin:4px 0}
+#topbar button{margin:2px;padding:6px 10px}
 #routines button{margin:2px;padding:6px 10px}
 .year{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.monthView{display:grid;grid-template-columns:1fr;gap:8px}
 .month{border:1px solid #ccc;padding:4px}
 .month h2{font-size:14px;margin:2px 0}
 .week{display:grid;grid-template-columns:repeat(7,1fr);font-size:10px;text-align:center}
@@ -20,11 +22,19 @@ h1{font-size:18px;margin:4px 0}
 hobby{background:#deffe4}
 .none{background:#eee}
 .today{outline:2px solid #000}
-textarea{width:100%;font-size:12px}
+#todoView{font-size:12px}
+.todoItem{border-bottom:1px solid #ccc;padding:4px 0}
+.hidden{display:none}
 </style>
 </head>
 <body>
 <h1>📘 手帳</h1>
+
+<div id="topbar">
+<button onclick="setView('year')">年</button>
+<button onclick="setView('month')">月</button>
+<button onclick="setView('todo')">TODO</button>
+</div>
 
 <div id="routines">
 <button onclick="setMode('work')">仕事</button>
@@ -33,15 +43,19 @@ textarea{width:100%;font-size:12px}
 <button onclick="setMode('none')">何もしない</button>
 </div>
 
-<div class="year" id="calendar"></div>
+<div id="calendar" class="year"></div>
+<div id="todoView" class="hidden"></div>
 
 <script>
 const calendar=document.getElementById('calendar');
-const modes=['work','life','hobby','none'];
+const todoView=document.getElementById('todoView');
+let currentView='year';
+let currentMonth=new Date().getMonth();
 let currentMode='work';
 const today=new Date().toISOString().slice(0,10);
 
 function setMode(m){currentMode=m}
+function setView(v){currentView=v;render()}
 
 function save(key,val){localStorage.setItem(key,JSON.stringify(val))}
 function load(key){return JSON.parse(localStorage.getItem(key)||'{}')}
@@ -51,8 +65,38 @@ const todos=load('todos');
 
 function render(){
 calendar.innerHTML='';
+todoView.innerHTML='';
+calendar.className=currentView==='year'?'year':'monthView';
+calendar.classList.toggle('hidden',currentView==='todo');
+todoView.classList.toggle('hidden',currentView!=='todo');
 const y=new Date().getFullYear();
-for(let m=0;m<12;m++){
+
+if(currentView==='todo'){
+Object.keys(todos).sort().forEach(d=>{
+const div=document.createElement('div');
+div.className='todoItem';
+div.textContent=`${d}：${todos[d]}`;
+todoView.appendChild(div);
+});
+return;
+}
+
+
+if(currentView === 'month'){
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'center';
+  header.style.margin = '4px 0';
+
+  header.innerHTML = `
+    <button onclick="prevMonth()">◀</button>
+    <strong>${y}年 ${currentMonth + 1}月</strong>
+    <button onclick="nextMonth()">▶</button>
+  `;
+  calendar.appendChild(header);
+}const months=currentView==='year'?[...Array(12).keys()]:[currentMonth];
+months.forEach(m=>{
 const month=document.createElement('div');month.className='month';
 month.innerHTML=`<h2>${m+1}月</h2>`;
 const week=document.createElement('div');week.className='week';
@@ -64,22 +108,21 @@ for(let i=0;i<first;i++)days.innerHTML+='<div></div>';
 const last=new Date(y,m+1,0).getDate();
 for(let d=1;d<=last;d++){
 const date=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-const div=document.createElement('div');
-div.className='day';
+const div=document.createElement('div');div.className='day';
 if(marks[date])div.classList.add(marks[date]);
 if(date===today)div.classList.add('today');
 div.textContent=d;
 div.onclick=()=>{
 marks[date]=currentMode;save('marks',marks);
-const t=prompt('TODO（空でキャンセル）',todos[date]||'');
-if(t!==null){todos[date]=t;save('todos',todos)}
+const t=prompt('TODO（空でOK）',todos[date]||'');
+if(t!==null){t?todos[date]=t:delete todos[date];save('todos',todos)}
 render();
 };
 days.appendChild(div);
 }
 month.appendChild(days);
 calendar.appendChild(month);
-}
+});
 }
 
 if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js')}
