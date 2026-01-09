@@ -10,150 +10,96 @@ h1{font-size:22px;margin:6px 0}
 #topbar button,#routines button,#addTodoBtn{margin:4px;padding:10px 14px;font-size:16px;border-radius:10px;border:1px solid #ccc;background:#fff}
 #routines button.active{border-width:2px}
 .year{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.monthView,.weekView{display:grid;grid-template-columns:1fr;gap:12px}
-.month,.week{border:1px solid #ddd;padding:8px;border-radius:12px;background:#fff}
-.month h2,.week h2{font-size:16px;margin:4px 0;text-align:center}
+.monthScroll{display:flex;overflow-x:auto;gap:12px;padding-bottom:8px}
+.month{min-width:280px;border:1px solid #ddd;padding:8px;border-radius:12px;background:#fff}
+.month h2{font-size:16px;margin:4px 0;text-align:center}
 .weekHeader{display:grid;grid-template-columns:repeat(7,1fr);font-size:13px;text-align:center;font-weight:bold}
 .weekDays{display:grid;grid-template-columns:repeat(7,1fr)}
-.day,.weekDay{border:1px solid #eee;min-height:50px;font-size:14px;text-align:center;cursor:pointer;border-radius:6px;padding:4px}
+.day{border:1px solid #eee;min-height:44px;font-size:14px;text-align:center;cursor:pointer;border-radius:6px;padding:4px}
 .work{background:#d8ecff;color:#1b4f8a}
 .lesson{background:#e3f6e8;color:#1f6b3a}
 .meeting{background:#ffe1e6;color:#8a1b32}
 .hobby{background:#fff4cc;color:#8a6b1b}
 .today{outline:3px solid #555}
-.todoText{font-size:12px;margin-top:4px}
 #todoView{font-size:15px}
 .todoItem{border-bottom:1px dashed #ccc;padding:8px 0}
+.todoItem button{margin-left:6px}
 .hidden{display:none}
+.selectGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:8px 0}
+.selectGrid button{padding:6px;border-radius:6px;border:1px solid #ccc;background:#fff}
 </style>
 </head>
 <body>
 <h1>📘 手帳</h1><div id="topbar">
 <button onclick="setView('year')">年</button>
 <button onclick="setView('month')">月</button>
-<button onclick="setView('week')">週</button>
 <button onclick="setView('todo')">TODO</button>
 </div><div id="routines">
 <button data-mode="work" onclick="setMode('work')">仕事</button>
 <button data-mode="lesson" onclick="setMode('lesson')">習い事</button>
 <button data-mode="meeting" onclick="setMode('meeting')">会合</button>
 <button data-mode="hobby" onclick="setMode('hobby')">趣味</button>
-</div><div id="calendar" class="year"></div>
-<div id="todoView" class="hidden">
-<button id="addTodoBtn" onclick="addTodo()">＋予定を作成</button>
-<div id="todoList"></div>
-</div><script>
+</div><div id="calendar"></div>
+<div id="todoView" class="hidden"></div><script>
 const calendar=document.getElementById('calendar');
 const todoView=document.getElementById('todoView');
-const todoList=document.getElementById('todoList');
-let currentView='year';
+let currentView='month';
 let viewDate=new Date();
 let currentMode='work';
+let selectedDate=null;
 const todayStr=new Date().toISOString().slice(0,10);
 
-function setMode(m){
- currentMode=m;
- document.querySelectorAll('#routines button').forEach(b=>{
-  b.classList.toggle('active',b.dataset.mode===m);
-  b.style.borderColor=b.dataset.mode===m?getColor(m):'#ccc';
- });
-}
-
-function getColor(m){
- return {work:'#1b4f8a',lesson:'#1f6b3a',meeting:'#8a1b32',hobby:'#8a6b1b'}[m];
-}
-
+function setMode(m){currentMode=m;document.querySelectorAll('#routines button').forEach(b=>{b.classList.toggle('active',b.dataset.mode===m)})}
 function setView(v){currentView=v;render()}
-
-function save(key,val){localStorage.setItem(key,JSON.stringify(val))}
-function load(key){return JSON.parse(localStorage.getItem(key)||'{}')}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function load(k){return JSON.parse(localStorage.getItem(k)||'{}')}
 
 const marks=load('marks');
-const todos=load('todos');
-
-function addTodo(){
- const d=prompt('日付（YYYY-MM-DD）');
- if(!d)return;
- const t=prompt('予定内容');
- if(!t)return;
- todos[d]=t;save('todos',todos);render();
-}
-
-function startOfWeek(date){
- const d=new Date(date);
- const day=d.getDay();
- d.setDate(d.getDate()-day);
- return d;
-}
+let todos=load('todos');
 
 function render(){
-calendar.innerHTML='';
-todoList.innerHTML='';
-calendar.className=currentView==='year'?'year':currentView==='week'?'weekView':'monthView';
-calendar.classList.toggle('hidden',currentView==='todo');
-todoView.classList.toggle('hidden',currentView!=='todo');
+ calendar.innerHTML='';
+ todoView.innerHTML='';
+ calendar.classList.toggle('hidden',currentView==='todo');
+ todoView.classList.toggle('hidden',currentView!=='todo');
+ const y=viewDate.getFullYear();
 
-if(currentView==='todo'){
- Object.keys(todos).sort().forEach(d=>{
-  const div=document.createElement('div');
-  div.className='todoItem';
-  div.textContent=`${d}：${todos[d]}`;
-  todoList.appendChild(div);
- });
- return;
+ if(currentView==='month'){
+  const wrap=document.createElement('div');wrap.className='monthScroll';
+  for(let offset=-6;offset<=5;offset++){
+   const d=new Date(y,viewDate.getMonth()+offset,1);
+   wrap.appendChild(renderMonth(d));
+  }
+  calendar.appendChild(wrap);
+  return;
+ }
+
+ if(currentView==='todo'){
+  renderTodo();
+ }
 }
 
-const y=viewDate.getFullYear();
-const m=viewDate.getMonth();
-
-if(currentView==='week'){
- const start=startOfWeek(viewDate);
- const week=document.createElement('div');week.className='week';
- week.innerHTML=`<h2>${start.getMonth()+1}月 第${Math.ceil(start.getDate()/7)}週</h2>`;
+function renderMonth(dateObj){
+ const y=dateObj.getFullYear();
+ const m=dateObj.getMonth();
+ const month=document.createElement('div');month.className='month';
+ month.innerHTML=`<h2>${y}年 ${m+1}月</h2>`;
  const header=document.createElement('div');header.className='weekHeader';
  ['日','月','火','水','木','金','土'].forEach(w=>header.innerHTML+=`<div>${w}</div>`);
- week.appendChild(header);
+ month.appendChild(header);
  const days=document.createElement('div');days.className='weekDays';
- for(let i=0;i<7;i++){
-  const d=new Date(start);d.setDate(start.getDate()+i);
-  const dateStr=d.toISOString().slice(0,10);
-  const cell=document.createElement('div');cell.className='weekDay';
-  if(marks[dateStr])cell.classList.add(marks[dateStr]);
-  if(dateStr===todayStr)cell.classList.add('today');
-  cell.innerHTML=`<strong>${d.getDate()}</strong>`;
-  if(todos[dateStr]){
-   const t=document.createElement('div');t.className='todoText';t.textContent=todos[dateStr];
-   cell.appendChild(t);
-  }
-  cell.onclick=()=>{
-   if(marks[dateStr]===currentMode)delete marks[dateStr];
-   else marks[dateStr]=currentMode;
-   save('marks',marks);render();
-  };
-  days.appendChild(cell);
- }
- week.appendChild(days);
- calendar.appendChild(week);
- return;
-}
-
-const months=currentView==='year'?[...Array(12).keys()]:[m];
-months.forEach(mm=>{
- const month=document.createElement('div');month.className='month';
- month.innerHTML=`<h2>${mm+1}月</h2>`;
- const week=document.createElement('div');week.className='weekHeader';
- ['日','月','火','水','木','金','土'].forEach(w=>week.innerHTML+=`<div>${w}</div>`);
- month.appendChild(week);
- const days=document.createElement('div');days.className='weekDays';
- const first=new Date(y,mm,1).getDay();
+ const first=new Date(y,m,1).getDay();
  for(let i=0;i<first;i++)days.innerHTML+='<div></div>';
- const last=new Date(y,mm+1,0).getDate();
+ const last=new Date(y,m+1,0).getDate();
  for(let d=1;d<=last;d++){
-  const dateStr=`${y}-${String(mm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   const div=document.createElement('div');div.className='day';
   if(marks[dateStr])div.classList.add(marks[dateStr]);
   if(dateStr===todayStr)div.classList.add('today');
   div.textContent=d;
+  let pressTimer;
+  div.onmousedown=()=>pressTimer=setTimeout(()=>{selectedDate=dateStr;setView('todo')},500);
+  div.onmouseup=()=>clearTimeout(pressTimer);
   div.onclick=()=>{
    if(marks[dateStr]===currentMode)delete marks[dateStr];
    else marks[dateStr]=currentMode;
@@ -162,12 +108,50 @@ months.forEach(mm=>{
   days.appendChild(div);
  }
  month.appendChild(days);
- calendar.appendChild(month);
-});
+ return month;
+}
+
+function renderTodo(){
+ const title=document.createElement('h2');title.textContent='予定管理';
+ todoView.appendChild(title);
+
+ const dateInfo=document.createElement('div');dateInfo.textContent=selectedDate?`選択日：${selectedDate}`:'日付を選択';
+ todoView.appendChild(dateInfo);
+
+ const monthSel=document.createElement('div');monthSel.className='selectGrid';
+ for(let m=1;m<=12;m++){
+  const b=document.createElement('button');b.textContent=m+'月';
+  b.onclick=()=>{selectedDate=`${viewDate.getFullYear()}-${String(m).padStart(2,'0')}-01`;renderTodo()};
+  monthSel.appendChild(b);
+ }
+ todoView.appendChild(monthSel);
+
+ const daySel=document.createElement('div');daySel.className='selectGrid';
+ for(let d=1;d<=31;d++){
+  const b=document.createElement('button');b.textContent=d;
+  b.onclick=()=>{if(selectedDate){const p=selectedDate.split('-');selectedDate=`${p[0]}-${p[1]}-${String(d).padStart(2,'0')}`;renderTodo()}};
+  daySel.appendChild(b);
+ }
+ todoView.appendChild(daySel);
+
+ if(selectedDate){
+  const input=document.createElement('input');input.placeholder='予定内容';input.style.width='100%';
+  const saveBtn=document.createElement('button');saveBtn.textContent='保存';
+  saveBtn.onclick=()=>{todos[selectedDate]=input.value;save('todos',todos);renderTodo()};
+  todoView.appendChild(input);todoView.appendChild(saveBtn);
+ }
+
+ Object.keys(todos).sort().forEach(d=>{
+  const div=document.createElement('div');div.className='todoItem';
+  div.textContent=`${d}：${todos[d]}`;
+  const del=document.createElement('button');del.textContent='削除';
+  del.onclick=()=>{delete todos[d];save('todos',todos);renderTodo()};
+  div.appendChild(del);
+  todoView.appendChild(div);
+ });
 }
 
 setMode('work');
 render();
 </script></body>
 </html>
-    
