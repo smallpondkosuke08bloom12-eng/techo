@@ -1,59 +1,51 @@
 <!DOCTYPE html><html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>手帳</title>
+<title>相棒の手帳</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
 <style>
-body{font-family:sans-serif;margin:0;padding:0;background:#f7f4ef}
-header{position:sticky;top:0;background:#fff;border-bottom:2px solid #ccc;padding:8px;z-index:10}
-#todayBar{display:flex;justify-content:space-between;align-items:center;font-size:14px}
-#todayBtn{padding:4px 10px;border-radius:8px;border:1px solid #999;background:#eee}
-main{padding:8px}
-h1{font-size:18px;margin:6px 0}
-#topbar button,#routines button{margin:3px;padding:10px 14px;font-size:14px;border-radius:10px}
-.year{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.monthView{display:flex;overflow-x:auto;gap:12px}
-.weekView{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.month,.weekDay{border:1px solid #bbb;padding:6px;border-radius:12px;background:#fff}
-.month{min-width:280px}
-.month h2{text-align:center;margin:4px 0}
-.weekDay h3{text-align:center;margin:4px 0;font-size:13px}
-.week{display:grid;grid-template-columns:repeat(7,1fr);font-size:12px;text-align:center}
-.days{display:grid;grid-template-columns:repeat(7,1fr)}
-.day{border:1px solid #ddd;min-height:38px;font-size:12px;text-align:center;cursor:pointer;border-radius:8px;margin:1px;display:flex;align-items:center;justify-content:center;flex-direction:column}
-.today{outline:3px solid #000;background:#fffbe6}
-.work{background:#cce6ff}
-.lesson{background:#d9f5d9}
-.meeting{background:#ffd6d6}
-.hobby{background:#fff2b3}
-.hidden{display:none}
-#todoView{font-size:14px}
-.todoItem{border-bottom:1px solid #ccc;padding:6px 0}
-</style>
+:root{
+  --work:#cce6ff;--lesson:#d9f5d9;--meeting:#ffd6d6;--hobby:#fff2b3;
+  --accent:#333;--bg:#f4f1ec;
+}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN",sans-serif;background:var(--bg)}
+header{position:sticky;top:0;background:#fff;border-bottom:3px solid #bbb;z-index:20}
+#todayBar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:15px;font-weight:bold}
+#todayBtn{padding:6px 14px;border-radius:12px;border:2px solid #666;background:#fafafa}
+main{padding:10px}
+h1{margin:6px 0 10px 0}/* topbar */ #topbar{display:flex;gap:6px;margin-bottom:10px} #topbar button{flex:1;padding:10px 0;font-size:15px;border-radius:14px;border:2px solid #999;background:#eee} #topbar button.active{background:#333;color:#fff}
+
+/* routine */ #routines{display:flex;gap:6px;margin-bottom:12px} #routines button{flex:1;padding:10px 0;font-size:14px;border-radius:14px;border:2px solid #aaa;background:#fff} #routines button.active{outline:3px solid #333}
+
+#calendar.year{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} #calendar.monthView{display:flex;overflow-x:auto;gap:14px} #calendar.weekView{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+
+.month,.weekDay{background:#fff;border:2px solid #bbb;border-radius:16px;padding:8px;min-width:280px} .month h2,.weekDay h3{text-align:center;margin:6px 0} .week{display:grid;grid-template-columns:repeat(7,1fr);font-size:13px;text-align:center} .days{display:grid;grid-template-columns:repeat(7,1fr)}
+
+.day{border:1px solid #ccc;min-height:44px;border-radius:10px;margin:2px;font-size:13px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer} .today{outline:4px solid #000;background:#fffbe0} .work{background:var(--work)} .lesson{background:var(--lesson)} .meeting{background:var(--meeting)} .hobby{background:var(--hobby)}
+
+#todoView{font-size:15px} .todoItem{background:#fff;border:2px solid #ccc;border-radius:14px;padding:10px;margin-bottom:8px} .hidden{display:none} </style>
+
 </head>
 <body>
 <header>
   <div id="todayBar">
     <div id="todayText"></div>
-    <button id="todayBtn" onclick="goToday()">今日</button>
+    <button id="todayBtn" onclick="goToday()">今日へ戻る</button>
   </div>
 </header>
 <main>
-<h1>📘 手帳</h1>
-<div id="topbar">
-<button onclick="setView('year')">年</button>
-<button onclick="setView('month')">月</button>
-<button onclick="setView('week')">週</button>
-<button onclick="setView('todo')">TODO</button>
-</div>
-<div id="routines">
-<button style="color:#0066cc" onclick="setMode('work')">仕事</button>
-<button style="color:#2d7f2d" onclick="setMode('lesson')">習い事</button>
-<button style="color:#cc3333" onclick="setMode('meeting')">会合</button>
-<button style="color:#b38f00" onclick="setMode('hobby')">趣味</button>
-</div>
-<div id="calendar"></div>
+<h1>📘 相棒の手帳</h1><div id="topbar">
+  <button id="btnYear" onclick="setView('year')">年</button>
+  <button id="btnMonth" onclick="setView('month')">月</button>
+  <button id="btnWeek" onclick="setView('week')">週</button>
+  <button id="btnTodo" onclick="setView('todo')">TODO</button>
+</div><div id="routines">
+  <button id="modeWork" style="color:#0066cc" onclick="setMode('work')">仕事</button>
+  <button id="modeLesson" style="color:#2f7f2f" onclick="setMode('lesson')">習い事</button>
+  <button id="modeMeeting" style="color:#cc3333" onclick="setMode('meeting')">会合</button>
+  <button id="modeHobby" style="color:#b38f00" onclick="setMode('hobby')">趣味</button>
+</div><div id="calendar"></div>
 <div id="todoView" class="hidden"></div>
 </main>
 <script>
@@ -67,19 +59,19 @@ const todayStr=today.toISOString().slice(0,10);
 const marks=JSON.parse(localStorage.getItem('marks')||'{}');
 const todos=JSON.parse(localStorage.getItem('todos')||'{}');function updateTodayBar(){ const d=new Date(); document.getElementById('todayText').textContent= ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}） ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}; } setInterval(updateTodayBar,60000);updateTodayBar();
 
-function setMode(m){currentMode=m} function setView(v){currentView=v;render()} function goToday(){viewDate=new Date();render()} function save(){localStorage.setItem('marks',JSON.stringify(marks));localStorage.setItem('todos',JSON.stringify(todos))}
+function setView(v){currentView=v;updateActive();render()} function setMode(m){currentMode=m;updateActive()} function goToday(){viewDate=new Date();render()} function save(){localStorage.setItem('marks',JSON.stringify(marks));localStorage.setItem('todos',JSON.stringify(todos))}
+
+function updateActive(){ ['year','month','week','todo'].forEach(v=>{ document.getElementById('btn'+v.charAt(0).toUpperCase()+v.slice(1)).classList.toggle('active',currentView===v) }); ['work','lesson','meeting','hobby'].forEach(m=>{ document.getElementById('mode'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('active',currentMode===m) }); }
 
 function render(){ calendar.innerHTML='';todoView.innerHTML=''; calendar.className=''; calendar.classList.toggle('hidden',currentView==='todo'); todoView.classList.toggle('hidden',currentView!=='todo');
 
 if(currentView==='todo'){ Object.keys(todos).sort().forEach(d=>{ const div=document.createElement('div');div.className='todoItem';div.textContent=${d}：${todos[d]};todoView.appendChild(div); });return; }
 
-const base=new Date(viewDate);
+if(currentView==='week'){ calendar.className='weekView'; const base=new Date(viewDate);const start=new Date(base);start.setDate(base.getDate()-base.getDay()); for(let i=0;i<7;i++){ const d=new Date(start);d.setDate(start.getDate()+i);const ds=d.toISOString().slice(0,10); const wd=document.createElement('div');wd.className='weekDay'; wd.innerHTML=<h3>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）</h3>; const cell=document.createElement('div');cell.className='day'; if(marks[ds])cell.classList.add(marks[ds]);if(ds===todayStr)cell.classList.add('today'); if(todos[ds])cell.innerHTML+=<div>${todos[ds]}</div>; cell.onclick=()=>{marks[ds]===currentMode?delete marks[ds]:marks[ds]=currentMode;save();render()}; cell.oncontextmenu=e=>{e.preventDefault();const t=prompt('予定',todos[ds]||'');if(t!==null){t?todos[ds]=t:delete todos[ds];save();render()}}; wd.appendChild(cell);calendar.appendChild(wd); } return; }
 
-if(currentView==='week'){ calendar.className='weekView'; const start=new Date(base);start.setDate(base.getDate()-base.getDay()); for(let i=0;i<7;i++){ const d=new Date(start);d.setDate(start.getDate()+i); const ds=d.toISOString().slice(0,10); const wd=document.createElement('div');wd.className='weekDay'; wd.innerHTML=<h3>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）</h3>; const cell=document.createElement('div');cell.className='day';cell.textContent=marks[ds]?'':' '; if(marks[ds])cell.classList.add(marks[ds]); if(ds===todayStr)cell.classList.add('today'); if(todos[ds])cell.innerHTML+=<div style="font-size:11px">${todos[ds]}</div>; cell.onclick=()=>{marks[ds]===currentMode?delete marks[ds]:marks[ds]=currentMode;save();render();}; cell.oncontextmenu=e=>{e.preventDefault();const t=prompt('TODO',todos[ds]||'');if(t!==null){t?todos[ds]=t:delete todos[ds];save();render();}}; wd.appendChild(cell);calendar.appendChild(wd); } return; }
+if(currentView==='month'){ calendar.className='monthView'; const y=viewDate.getFullYear();const base=viewDate.getMonth(); for(let off=-1;off<=1;off++){ const m=base+off;const year=y+Math.floor(m/12);const mm=(m+12)%12; const month=document.createElement('div');month.className='month';month.innerHTML=<h2>${year}年 ${mm+1}月</h2>; const week=document.createElement('div');week.className='week';'日月火水木金土'.split('').forEach(w=>week.innerHTML+=<div>${w}</div>); month.appendChild(week); const days=document.createElement('div');days.className='days'; const first=new Date(year,mm,1).getDay();for(let i=0;i<first;i++)days.appendChild(document.createElement('div')); const last=new Date(year,mm+1,0).getDate(); for(let d=1;d<=last;d++){ const ds=${year}-${String(mm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}; const div=document.createElement('div');div.className='day';div.textContent=d; if(marks[ds])div.classList.add(marks[ds]);if(ds===todayStr)div.classList.add('today'); div.onclick=()=>{marks[ds]===currentMode?delete marks[ds]:marks[ds]=currentMode;save();render()}; div.oncontextmenu=e=>{e.preventDefault();const t=prompt('予定',todos[ds]||'');if(t!==null){t?todos[ds]=t:delete todos[ds];save();render()}}; days.appendChild(div); } month.appendChild(days);calendar.appendChild(month); } return; }
 
-if(currentView==='month'){ calendar.className='monthView'; const y=viewDate.getFullYear();const m=viewDate.getMonth(); const month=document.createElement('div');month.className='month'; month.innerHTML=<h2>${y}年 ${m+1}月</h2>; const week=document.createElement('div');week.className='week';'日月火水木金土'.split('').forEach(w=>week.innerHTML+=<div>${w}</div>); month.appendChild(week); const days=document.createElement('div');days.className='days'; const first=new Date(y,m,1).getDay();for(let i=0;i<first;i++)days.appendChild(document.createElement('div')); const last=new Date(y,m+1,0).getDate(); for(let d=1;d<=last;d++){ const ds=${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}; const div=document.createElement('div');div.className='day';div.textContent=d; if(marks[ds])div.classList.add(marks[ds]);if(ds===todayStr)div.classList.add('today'); div.onclick=()=>{marks[ds]===currentMode?delete marks[ds]:marks[ds]=currentMode;save();render();}; div.oncontextmenu=e=>{e.preventDefault();const t=prompt('TODO',todos[ds]||'');if(t!==null){t?todos[ds]=t:delete todos[ds];save();render();}}; days.appendChild(div); } month.appendChild(days);calendar.appendChild(month);return; }
-
-calendar.className='year'; const y=viewDate.getFullYear(); for(let m=0;m<12;m++){ const month=document.createElement('div');month.className='month';month.innerHTML=<h2>${m+1}月</h2>;calendar.appendChild(month); } } render(); </script>
+calendar.className='year'; const y=viewDate.getFullYear(); for(let m=0;m<12;m++){ const month=document.createElement('div');month.className='month';month.innerHTML=<h2>${m+1}月</h2>;calendar.appendChild(month); } } updateActive();render(); </script>
 
 </body>
 </html>
